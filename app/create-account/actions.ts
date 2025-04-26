@@ -20,32 +20,6 @@ const checkPasswords = ({
     return password === confirm_password;
 };
 
-const checkUniqueUsername = async(username: string) => {
-	const user = await db.user.findUnique({
-		where: {
-			username,
-		},
-		select: {
-			id: true,
-		},
-	});
-
-	return !Boolean(user);
-};
-
-const checkUniqueEmail = async(email: string) => {
-	const user = await db.user.findUnique({
-		where: {
-			email,
-		},
-		select: {
-			id: true
-		}
-	});
-	
-	return !Boolean(user);
-};
-
 const formSchema = z
     .object({
         username: z
@@ -56,10 +30,8 @@ const formSchema = z
 			.trim()
 			.toLowerCase()	
 			//.transform((username) => `🔥 ${username} 🔥`)	//값을 변환	
-            .refine(checkUsername, "No potatoes allowed!")
-			.refine(checkUniqueUsername, "This username is already taken"),
-        email: z.string().email().trim().toLowerCase()
-				.refine(checkUniqueEmail,"There is an account already registered with that email."),
+            .refine(checkUsername, "No potatoes allowed!"),
+        email: z.string().email().trim().toLowerCase(),
         password: z
             .string()
             .min(PASSWORD_MIN_LENGTH)
@@ -68,10 +40,6 @@ const formSchema = z
                 PASSWORD_REGEX_ERROR
             ),
         confirm_password: z.string().min(PASSWORD_MIN_LENGTH),
-    })
-    .refine(checkPasswords, {
-        message: "Both passwords should be the same!",
-        path: ["confirm_password"],
     })
 	.superRefine(async({username}, ctx) => {
 		const user = await db.user.findUnique({
@@ -86,10 +54,35 @@ const formSchema = z
 			ctx.addIssue({
 				code:'custom',
 				message: "This username is already taken",
+				path: ["username"],
+				fatal: true,
 			});
+			return z.NEVER;
 		}
-
-	});
+	})
+	.superRefine(async({email}, ctx) => {
+		const user = await db.user.findUnique({
+			where: {
+				email
+			},
+			select: {
+				id: true
+			}
+		});
+		if(user){
+			ctx.addIssue({
+				code:'custom',
+				message: "This email is already taken",
+				path: ["email"],
+				fatal: true,
+			});
+			return z.NEVER;
+		}
+	})
+	.refine(checkPasswords, {
+        message: "Both passwords should be the same!",
+        path: ["confirm_password"],
+    });
 
 export async function createAccount(prevState: any, formData: FormData) {
     const data = {

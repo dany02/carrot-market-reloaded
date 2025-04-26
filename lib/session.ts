@@ -6,6 +6,7 @@ interface SessionContent {
 }
 
 export default async function getSession(){
+	//console.log(cookies());
 	return(
 		getIronSession<SessionContent>(await cookies(),{
 			cookieName: "delicious-karrot",
