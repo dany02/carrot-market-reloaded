@@ -8,6 +8,15 @@ import { useState } from "react";
 import { uploadProduct } from "./action";
 import { useFormState } from "react-dom";
 
+const checkImageFile = (file: File) => {
+	return file && file.type.startsWith('image/');
+};
+
+const checkImageSize = (file:File) => {
+	const maxSize = 3 * 1024 * 1024;
+	return file.size <= maxSize;
+}
+
 export default function AddProduct() {
     const [preview, setPreview] = useState("");
     const onImageChange = (event:React.ChangeEvent<HTMLInputElement>) => {
@@ -16,8 +25,16 @@ export default function AddProduct() {
 			return;
 		}
 		const file = files[0];
-		const url = URL.createObjectURL(file);
-		setPreview(url);
+		const checkImage = checkImageFile(file);
+		const checkImgSize = checkImageSize(file);
+
+		if(checkImage && checkImgSize){
+			const url = URL.createObjectURL(file);
+			setPreview(url);
+		}else{
+			return;
+		}
+
 	};
 	const [state, action] = useFormState(uploadProduct, null);
     return (
