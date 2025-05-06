@@ -29,8 +29,16 @@ export type InitialProducts = Prisma.PromiseReturnType<
     typeof getInitialProducts
 >;
 
+export const metadata = {
+	title: "Home",
+};
+
+//export const dynamic = "force-dynamic"; //static 페이지를 dynamic 페이지로 변경
+
+export const revalidate = 60;//특정한 시간에 페이지를 재검증
+
 export default async function Products() {
-    const initialProducts = await getCachedProducts();
+    const initialProducts = await getInitialProducts();
 	const revalidate = async ()=>{
 		"use server";
 		revalidatePath("/home");
