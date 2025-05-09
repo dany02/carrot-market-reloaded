@@ -3,9 +3,9 @@ import getSession from "@/lib/session";
 import { formatToWon } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { UserIcon } from "@heroicons/react/24/solid";
-import { unstable_cache as nextCache} from "next/cache";
+import { unstable_cache as nextCache } from "next/cache";
 import React from "react";
 
 async function getIsOwner(userId: number) {
@@ -33,7 +33,7 @@ async function getProduct(id: number) {
 }
 
 const getCachedProduct = nextCache(getProduct, ["product-detail"], {
-	tags: ["product-detail"],
+    tags: ["product-detail"],
 });
 
 async function getProductTitle(id: number) {
@@ -42,31 +42,27 @@ async function getProductTitle(id: number) {
             id,
         },
         select: {
-			title:true,
-		}
+            title: true,
+        },
     });
     return product;
 }
 
-const getCachedProductTitle = nextCache(getProductTitle, ["product-title"],{
-	tags: ["product-title"],
-})
+const getCachedProductTitle = nextCache(getProductTitle, ["product-title"], {
+    tags: ["product-title"],
+});
 
-export async function generateMetadata({
-    params,
-}: {
-    params: { id: string };
-}){
-	const product = await getCachedProductTitle(Number(params.id));
-	return{
-		title: product?.title,
-	}
+export async function generateMetadata({ params }: { params: { id: string } }) {
+    const product = await getCachedProductTitle(Number(params.id));
+    return {
+        title: product?.title,
+    };
 }
 
 export default async function ProductDetail({
     params,
 }: {
-    params: { id: string }
+    params: { id: string };
 }) {
     const id = Number(params.id);
     if (isNaN(id)) {
@@ -77,6 +73,28 @@ export default async function ProductDetail({
         return notFound();
     }
     const isOwner = await getIsOwner(product.userId);
+	const createChatRoom = async() => {
+		"use server";
+		const session = await getSession();
+		const room = await db.chatRoom.create({
+			data:{
+				users: {
+					connect:[
+						{
+							id:product.userId,
+						},
+						{
+							id:session.id,
+						},
+					]
+				}
+			},
+			select: {
+				id:true,
+			}
+		});
+		redirect(`/chats/${room.id}`);
+	};
     return (
         <div>
             <div className="relative aspect-square">
@@ -117,25 +135,26 @@ export default async function ProductDetail({
                         Delete product
                     </button>
                 ) : null}
-                <Link
-                    className="bg-orange-500 px-5 py-2.5 rounded-md text-white font-semibold"
-                    href={``}
-                >
-                    채팅하기
-                </Link>
+                <form action={createChatRoom}>
+                    <button
+                        className="bg-orange-500 px-5 py-2.5 rounded-md text-white font-semibold"
+                    >
+                        채팅하기
+                    </button>
+                </form>
             </div>
         </div>
     );
 }
 
-export const dynamicParams = true; 
+export const dynamicParams = true;
 // true : 미리 생성되지 않은 페이지들이 dynamic페이지들로 간주됨
 // false : 빌드할 때 미리 생선된 페이지들만 찾을 수 있음
-export async function generateStaticParams(){
-	const products = await db.product.findMany({
-		select: {
-			id: true,
-		}
-	});
-	return products.map((product) => ({id: product.id + ""}));
+export async function generateStaticParams() {
+    const products = await db.product.findMany({
+        select: {
+            id: true,
+        },
+    });
+    return products.map((product) => ({ id: product.id + "" }));
 }

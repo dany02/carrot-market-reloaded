@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Roboto, Rubik_Scribble } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-    variable: "--font-geist-sans",
-    subsets: ["latin"],
+const roboto = Roboto({
+	subsets:["latin"],
+	weight:["400","500"],
+	style:["normal","italic"],
+	variable: "--roboto-text",
 });
 
-const geistMono = Geist_Mono({
-    variable: "--font-geist-mono",
-    subsets: ["latin"],
+const rubik = Rubik_Scribble({
+	subsets: ['latin'],
+	weight: ["400"],
+	style: ["normal"],
+	variable:"--rubik-text",
 });
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
     title: {
@@ -30,7 +32,7 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <body
-                className={`${inter.className} bg-gray-900 text-white max-w-screen-sm mx-auto`}
+                className={`${roboto.variable} ${rubik.variable} bg-gray-900 text-white max-w-screen-sm mx-auto`}
             >
                 {children}
             </body>
